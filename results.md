@@ -53,6 +53,37 @@ ets_set                    0.72
 ets_duplicate_bag          0.63 - 1.15x slower +0.21 s
 ```
 
+```
+iex(1)> OtelBench.ets_insert_to_large_tab_bench()
+Operating System: Linux
+CPU Information: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz
+Number of Available Cores: 4
+Available memory: 15.49 GB
+Elixir 1.13.4
+Erlang 25.3.2-1
+
+Benchmark suite executing with the following configuration:
+warmup: 2 s
+time: 10 s
+memory time: 0 ns
+reduction time: 0 ns
+parallel: 100
+inputs: 1
+Estimated total run time: 24 s
+
+Benchmarking ets_duplicate_bag with input 1 ...
+Benchmarking ets_set with input 1 ...
+
+##### With input 1 #####
+Name                        ips        average  deviation         median         99th %
+ets_duplicate_bag        6.19 K      161.52 μs  ±3867.78%        5.70 μs     6352.91 μs
+ets_set                  3.94 K      253.68 μs  ±9495.01%        6.07 μs     8046.54 μs
+
+Comparison: 
+ets_duplicate_bag        6.19 K
+ets_set                  3.94 K - 1.57x slower +92.16 μs
+```
+
 ## Traverse results
 
 ```

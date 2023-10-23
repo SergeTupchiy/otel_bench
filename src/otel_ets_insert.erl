@@ -11,6 +11,7 @@
 
 %% run bench
 -export([insert_spans/2,
+         gen_and_insert_span/1,
          gen_and_insert_spans/2
         ]).
 
@@ -26,6 +27,9 @@ new_ets_duplicate_bag(Name) ->
 
 create_spans(N) ->
     [generate_span() || _ <- lists:seq(1, N)].
+
+gen_and_insert_span(Tab) ->
+    ets:insert(Tab, generate_span()).
 
 insert_spans(Tab, Spans) ->
     lists:foreach(fun(Span) -> ets:insert(Tab, Span) end, Spans).

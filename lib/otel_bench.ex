@@ -65,4 +65,72 @@ defmodule OtelBench do
     )
   end
 
+  def ets_insert_to_large_tab_bench do
+    :otel_ets_insert.new_ets_set(:ets_insert_set)
+    :otel_ets_insert.new_ets_duplicate_bag(:ets_insert_dup_bag)
+    Benchee.run(
+      %{
+        "ets_duplicate_bag" => {fn _input -> :otel_ets_insert.gen_and_insert_span(:ets_insert_dup_bag) end,
+                                before_scenario:
+                                fn _input ->
+                                  :ets.delete_all_objects(:ets_insert_dup_bag)
+                                  :otel_ets_insert.gen_and_insert_spans(:ets_insert_dup_bag, 100_000)
+                                end,
+                                after_scenario: fn _input -> :ets.delete_all_objects(:ets_insert_dup_bag) end},
+        "ets_set" => {fn _input -> :otel_ets_insert.gen_and_insert_span(:ets_insert_set) end,
+                      before_scenario:
+                      fn _input ->
+                        :ets.delete_all_objects(:ets_insert_set)
+                        :otel_ets_insert.gen_and_insert_spans(:ets_insert_set, 100_000)
+                      end,
+                      after_scenario: fn _input -> :ets.delete_all_objects(:ets_insert_set) end}
+      },
+      inputs: %{
+        "1" => 1
+      },
+      time: 10,
+      parallel: 100
+    )
+  end
+
+  def ets_insert_to_large_tab_set_bench do
+    :otel_ets_insert.new_ets_set(:ets_insert_set)
+    Benchee.run(
+      %{
+        "ets_set" => {fn _input -> :otel_ets_insert.gen_and_insert_span(:ets_insert_set) end,
+                      before_scenario:
+                      fn _input ->
+                        :ets.delete_all_objects(:ets_insert_set)
+                        :otel_ets_insert.gen_and_insert_spans(:ets_insert_set, 100_000)
+                      end,
+                      after_scenario: fn _input -> :ets.delete_all_objects(:ets_insert_set) end}
+      },
+      inputs: %{
+        "1" => 1
+      },
+      time: 15,
+      parallel: 100
+    )
+  end
+
+  def ets_insert_to_large_tab_bag_bench do
+    :otel_ets_insert.new_ets_duplicate_bag(:ets_insert_dup_bag)
+    Benchee.run(
+      %{
+        "ets_duplicate_bag" => {fn _input -> :otel_ets_insert.gen_and_insert_span(:ets_insert_dup_bag) end,
+                                before_scenario:
+                                fn _input ->
+                                  :ets.delete_all_objects(:ets_insert_dup_bag)
+                                  :otel_ets_insert.gen_and_insert_spans(:ets_insert_dup_bag, 100_000)
+                                end,
+                                after_scenario: fn _input -> :ets.delete_all_objects(:ets_insert_dup_bag) end}
+      },
+      inputs: %{
+        "1" => 1
+      },
+      time: 15,
+      parallel: 100
+    )
+  end
+
 end
