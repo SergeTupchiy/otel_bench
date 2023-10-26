@@ -4,7 +4,8 @@
 -include_lib("opentelemetry/include/otel_span.hrl").
 
 %% init bench
--export([new_ets_set/1,
+-export([new_ets_tab/2,
+         new_ets_set/1,
          new_ets_duplicate_bag/1,
          create_spans/1
         ]).
@@ -24,6 +25,15 @@ new_ets_duplicate_bag(Name) ->
     ets:new(Name, [public, named_table, duplicate_bag,
                    {write_concurrency,true},
                    {keypos, #span.instrumentation_scope}]).
+
+new_ets_tab(Name, Opts) ->
+    Opts1 = case lists:member(set, Opts) of
+                true ->
+                    [{keypos, #span.trace_id} | Opts];
+                false ->
+                    [{keypos, #span.instrumentation_scope} | Opts]
+            end,
+    ets:new(Name, [public | Opts1]).
 
 create_spans(N) ->
     [generate_span() || _ <- lists:seq(1, N)].

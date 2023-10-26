@@ -158,4 +158,54 @@ defmodule OtelBench do
     )
   end
 
+  def ets_size_bench do
+    Benchee.run(
+      %{
+        "ets_size" => {fn tid -> :ets.info(tid, :size) >= 0 end,
+                       before_scenario:
+                       fn input_opts ->
+                         :lists.foreach(fn p -> :erlang.garbage_collect(p) end, :erlang.processes())
+                         tid = :otel_ets_insert.new_ets_tab(:ets_size_test, input_opts)
+                         :otel_ets_insert.gen_and_insert_spans(tid, 100_000)
+                         tid
+                       end,
+                       after_scenario: fn tid -> :ets.delete(tid) end},
+        "ets_size_empty_tab" => {fn tid -> :ets.info(tid, :size) >= 0 end,
+                                 before_scenario:
+                                 fn input_opts ->
+                                   :lists.foreach(fn p -> :erlang.garbage_collect(p) end, :erlang.processes())
+                                   :otel_ets_insert.new_ets_tab(:ets_size_test, input_opts)
+                                 end,
+                                 after_scenario: fn tid -> :ets.delete(tid) end},
+
+        "ets_first" => {fn tid -> :ets.first(tid) != :'$end_of_table' end,
+                        before_scenario:
+                        fn input_opts ->
+                          :lists.foreach(fn p -> :erlang.garbage_collect(p) end, :erlang.processes())
+                          tid = :otel_ets_insert.new_ets_tab(:ets_size_test, input_opts)
+                          :otel_ets_insert.gen_and_insert_spans(tid, 100_000)
+                          tid
+                        end,
+                        after_scenario: fn tid -> :ets.delete(tid) end},
+        "ets_first_empty_tab" => {fn tid -> :ets.first(tid) != :'$end_of_table' end,
+                                  before_scenario:
+                                  fn input_opts ->
+                                    :lists.foreach(fn p -> :erlang.garbage_collect(p) end, :erlang.processes())
+                                    :otel_ets_insert.new_ets_tab(:ets_size_test, input_opts)
+                                  end,
+                                  after_scenario: fn tid -> :ets.delete(tid) end}
+      },
+      inputs: %{
+        "dup bag write_concurrency decentralized" => [:duplicate_bag, write_concurrency: true, decentralized_counters: true],
+        "dup bag write_concurrency" => [:duplicate_bag, write_concurrency: true, decentralized_counters: false],
+        "dup bag" => [:duplicate_bag, write_concurrency: false, decentralized_counters: false],
+        "set write_concurrency decentralized" => [:set, write_concurrency: true, decentralized_counters: true],
+        "set bag write_concurrency" =>[:set, write_concurrency: true, decentralized_counters: false],
+        "set" => [:set, write_concurrency: false, decentralized_counters: false],
+      },
+      time: 10
+    )
+
+  end
+
 end
