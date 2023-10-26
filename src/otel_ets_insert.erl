@@ -7,7 +7,8 @@
 -export([new_ets_tab/2,
          new_ets_set/1,
          new_ets_duplicate_bag/1,
-         create_spans/1
+         create_spans/1,
+         generate_span/0
         ]).
 
 %% run bench

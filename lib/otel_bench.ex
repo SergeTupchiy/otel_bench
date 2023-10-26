@@ -208,4 +208,30 @@ defmodule OtelBench do
 
   end
 
+  def ets_insert do
+    Benchee.run(
+      %{
+        "ets_insert" => {fn {tid, span} -> :ets.insert(tid, span) end,
+                         before_scenario:
+                         fn input_opts ->
+                           :lists.foreach(fn p -> :erlang.garbage_collect(p) end, :erlang.processes())
+                           :otel_ets_insert.new_ets_tab(:ets_insert_test, input_opts)
+                         end,
+                         before_each: fn tid -> {tid, :otel_ets_insert.generate_span()} end,
+                         after_scenario: fn tid -> :ets.delete(tid) end}
+      },
+      inputs: %{
+        "dup bag write_concurrency decentralized" => [:duplicate_bag, write_concurrency: true, decentralized_counters: true],
+        "dup bag write_concurrency" => [:duplicate_bag, write_concurrency: true, decentralized_counters: false],
+        "dup bag" => [:duplicate_bag, write_concurrency: false, decentralized_counters: false],
+        "set write_concurrency decentralized" => [:set, write_concurrency: true, decentralized_counters: true],
+        "set bag write_concurrency" =>[:set, write_concurrency: true, decentralized_counters: false],
+        "set" => [:set, write_concurrency: false, decentralized_counters: false],
+      },
+      time: 10,
+      parallel: 100
+    )
+
+  end
+
 end
