@@ -5,6 +5,7 @@
 
 %% init bench
 -export([new_ets_tab/2,
+         new_ets_tab/3,
          new_ets_set/1,
          new_ets_duplicate_bag/1,
          create_spans/1,
@@ -28,13 +29,16 @@ new_ets_duplicate_bag(Name) ->
                    {keypos, #span.instrumentation_scope}]).
 
 new_ets_tab(Name, Opts) ->
-    Opts1 = case lists:member(set, Opts) of
+    new_ets_tab(Name, Opts, true).
+
+new_ets_tab(Name, Opts, TraceIdKey) ->
+    Opts1 = case TraceIdKey of
                 true ->
                     [{keypos, #span.trace_id} | Opts];
                 false ->
                     [{keypos, #span.instrumentation_scope} | Opts]
             end,
-    ets:new(Name, [public | Opts1]).
+    ets:new(Name, [public, named_table | Opts1]).
 
 create_spans(N) ->
     [generate_span() || _ <- lists:seq(1, N)].
