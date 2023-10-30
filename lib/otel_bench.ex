@@ -122,48 +122,6 @@ defmodule OtelBench do
     )
   end
 
-  def ets_insert_to_large_tab_set_bench do
-    :otel_ets_insert.new_ets_set(:ets_insert_set)
-
-    Benchee.run(
-      %{
-        "ets_set" =>
-          {fn _input -> :otel_ets_insert.gen_and_insert_span(:ets_insert_set) end,
-           before_scenario: fn _input ->
-             :ets.delete_all_objects(:ets_insert_set)
-             :otel_ets_insert.gen_and_insert_spans(:ets_insert_set, 100_000)
-           end,
-           after_scenario: fn _input -> :ets.delete_all_objects(:ets_insert_set) end}
-      },
-      inputs: %{
-        "1" => 1
-      },
-      time: 15,
-      parallel: 100
-    )
-  end
-
-  def ets_insert_to_large_tab_bag_bench do
-    :otel_ets_insert.new_ets_duplicate_bag(:ets_insert_dup_bag)
-
-    Benchee.run(
-      %{
-        "ets_duplicate_bag" =>
-          {fn _input -> :otel_ets_insert.gen_and_insert_span(:ets_insert_dup_bag) end,
-           before_scenario: fn _input ->
-             :ets.delete_all_objects(:ets_insert_dup_bag)
-             :otel_ets_insert.gen_and_insert_spans(:ets_insert_dup_bag, 100_000)
-           end,
-           after_scenario: fn _input -> :ets.delete_all_objects(:ets_insert_dup_bag) end}
-      },
-      inputs: %{
-        "1" => 1
-      },
-      time: 15,
-      parallel: 100
-    )
-  end
-
   def ets_size_bench do
     Benchee.run(
       %{
@@ -344,5 +302,60 @@ defmodule OtelBench do
       time: 10,
       parallel: 100
     )
+  end
+
+  def persitent_term() do
+    :ets.new(:bench_tab, [:set, :named_table, :public, write_concurrency: true])
+    :ets.insert(:bench_tab, {:is_enabled, false})
+    :persistent_term.put({:otel_bench, :is_enabled}, false)
+    ref = :atomics.new(1, [])
+    :atomics.put(ref,1,9223372036854775807)
+    Benchee.run(
+      %{
+        "ets read and update" => fn ->
+          val = :ets.lookup_element(:bench_tab, :is_enabled, 2)
+          val1 =
+            case val do
+              true -> false
+              false -> true
+            end
+          :ets.insert(:bench_tab, {:is_enabled, val1})
+        end,
+        "persistent_term read and update" => fn ->
+          val = :persistent_term.get({:otel_bench, :is_enabled}, false)
+          val1 =
+            case val do
+              true -> false
+              false -> true
+            end
+          :persistent_term.put({:otel_bench, :is_enabled}, val1)
+        end,
+        "atomic sub_get" => fn -> :atomics.sub_get(ref,1,1) end
+      },
+      time: 20
+    )
+    :io.format("Atomic val: ~p~n", [:atomics.get(ref,1)])
+  end
+
+  def persitent_term_read(parallel) do
+    :ets.new(:bench_tab_read, [:set, :named_table, :public, write_concurrency: true])
+    :ets.insert(:bench_tab_read, {:is_enabled, true})
+    :persistent_term.put({:otel_bench, :is_enabled}, true)
+    ref = :atomics.new(1, [])
+    :atomics.put(ref,1,9223372036854775807)
+
+    Benchee.run(
+      %{
+        "ets read" => fn _ -> :ets.lookup_element(:bench_tab_read, :is_enabled, 2) end,
+        "persistent_term read" => fn _ -> :persistent_term.get({:otel_bench, :is_enabled}) end,
+        "atomic sub_get" => fn _ -> :atomics.sub_get(ref,1,1) end
+      },
+      before_scenario: fn _ ->
+        :lists.foreach(fn p -> :erlang.garbage_collect(p) end, :erlang.processes())
+      end,
+      time: 10,
+      parallel: parallel
+    )
+    :io.format("Atomic val: ~p~n", [:atomics.get(ref,1)])
   end
 end
